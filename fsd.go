@@ -1,22 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"bufio"
 	"log"
 	"net"
 
 	"github.com/spf13/viper"
 )
 
-// ConnectToServer connects to VATSIM FSD over TCP
-func ConnectToServer() (conn net.Conn) {
-	fmt.Println("Connecting to FSD 🚀\n", viper.GetString("FSD_URL"))
-
+func connectToServer() {
+	log.Print("[FSD]: Connecting to Socket")
 	conn, err := net.Dial("tcp", viper.GetString("fsd.url"))
 
 	if err != nil {
 		log.Fatal("Error connecting to FSD\n", err)
 	}
+
+	log.Print("[FSD]: Connected to Socket")
+
+	defer func() {
+		conn.Close()
+		log.Print("[FSD]: Closing Connection")
+	}()
 
 	_, err = conn.Write([]byte(`$"SYNC:*:` + viper.GetString("fsd.name") + `:B1:1:\r\n"`))
 
@@ -24,5 +29,18 @@ func ConnectToServer() (conn net.Conn) {
 		log.Fatal(err)
 	}
 
-	return conn
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		if scanner.Text() == "#You are not allowed on this port." {
+			log.Print("[FSD]: Connection Blocked on Port")
+			break
+		}
+
+		log.Print(scanner.Text())
+	}
+
+	if scanner.Err() != nil {
+		log.Print(scanner.Err().Error())
+	}
 }
