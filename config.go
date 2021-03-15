@@ -1,16 +1,21 @@
 package main
 
 import (
-	"strings"
+	"log"
 
 	"github.com/spf13/viper"
 )
 
-// InitConfig initialises environment variables
-func InitConfig() {
-	initDefaults()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
+func initConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+
+	err := viper.ReadInConfig()
+
+	if err != nil {
+		log.Fatal("Couldn't read config file\n", err)
+	}
 }
 
 func initDefaults() {
