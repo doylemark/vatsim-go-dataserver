@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func connectToServer() {
+func connectToFSD() {
 	FSDLogger.Print("Connecting to Socket")
 	conn, err := net.Dial("tcp", viper.GetString("fsd.url"))
 
@@ -38,9 +38,5 @@ func connectToServer() {
 		}
 
 		FSDLogger.Print(scanner.Text())
-	}
-
-	if scanner.Err() != nil {
-		FSDLogger.Print(scanner.Err().Error())
 	}
 }
