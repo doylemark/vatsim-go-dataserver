@@ -2,3 +2,4 @@
 .env
 /tmp
 config.yaml
+log.txt

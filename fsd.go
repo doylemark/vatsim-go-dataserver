@@ -9,18 +9,18 @@ import (
 )
 
 func connectToServer() {
-	log.Print("[FSD]: Connecting to Socket")
+	FSDLogger.Print("Connecting to Socket")
 	conn, err := net.Dial("tcp", viper.GetString("fsd.url"))
 
 	if err != nil {
 		log.Fatal("Error connecting to FSD\n", err)
 	}
 
-	log.Print("[FSD]: Connected to Socket")
+	FSDLogger.Print("Connected to Socket")
 
 	defer func() {
 		conn.Close()
-		log.Print("[FSD]: Closing Connection")
+		FSDLogger.Print("Closing Connection")
 	}()
 
 	_, err = conn.Write([]byte(`$"SYNC:*:` + viper.GetString("fsd.name") + `:B1:1:\r\n"`))
@@ -33,14 +33,14 @@ func connectToServer() {
 
 	for scanner.Scan() {
 		if scanner.Text() == "#You are not allowed on this port." {
-			log.Print("[FSD]: Connection Blocked on Port")
+			FSDLogger.Print("Connection Blocked on Port")
 			break
 		}
 
-		log.Print(scanner.Text())
+		FSDLogger.Print(scanner.Text())
 	}
 
 	if scanner.Err() != nil {
-		log.Print(scanner.Err().Error())
+		FSDLogger.Print(scanner.Err().Error())
 	}
 }
