@@ -1,10 +1,14 @@
 package main
 
-import "github.com/doylemark/vatsim-go-dataserver/hub"
+import (
+	"github.com/doylemark/vatsim-go-dataserver/fsd"
+	"github.com/doylemark/vatsim-go-dataserver/hub"
+	"github.com/doylemark/vatsim-go-dataserver/log"
+)
 
 func main() {
-	initLog()
+	log.InitLog()
 	initConfig()
-	go connectToFSD()
+	go fsd.ConnectToFSD()
 	hub.HandleConnections()
 }

@@ -1,4 +1,4 @@
-package main
+package log
 
 import (
 	"log"
@@ -9,7 +9,8 @@ var (
 	FSDLogger *log.Logger
 )
 
-func initLog() {
+// InitLog creates app loggers
+func InitLog() {
 	file, err := os.Create("log.txt")
 
 	if err != nil {

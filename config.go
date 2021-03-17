@@ -20,4 +20,5 @@ func initConfig() {
 
 func initDefaults() {
 	viper.SetDefault("fsd.url", "")
+	viper.SetDefault("fsd.name", "")
 }

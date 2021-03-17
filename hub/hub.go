@@ -39,7 +39,7 @@ func (hub *hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
-			hub.clients[client] = []string{""}
+			hub.clients[client] = []string{}
 			go hub.manageClient(client)
 
 		case client := <-hub.unregister:
@@ -56,8 +56,6 @@ func (hub *hub) run() {
 }
 
 func (hub *hub) manageClient(client *Client) {
-	i := 0
-
 	for {
 		if hub.clients[client] == nil {
 			fmt.Println("Client Disconnected")
@@ -67,7 +65,6 @@ func (hub *hub) manageClient(client *Client) {
 		msg := "Reporting Aircraft:" + strings.Join(hub.clients[client], " ") + "\nClients Connected:" + fmt.Sprint(len(hub.clients))
 
 		client.send <- []byte(msg)
-		i++
 		time.Sleep(time.Millisecond * 500)
 	}
 }
