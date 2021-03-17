@@ -11,12 +11,12 @@ type message struct {
 	client    *Client
 }
 
-// Hub maintains the set of active clients and broadcasts messages to the
-// clients.
-type Hub struct {
+// hub maintains the active set of clients and tracks their active
+// aircraft
+type hub struct {
 	clients map[*Client][]string
 
-	// Inbound messages from the clients.
+	// Inbound Callsign Updates
 	update chan *message
 
 	// Register client
@@ -26,8 +26,8 @@ type Hub struct {
 	unregister chan *Client
 }
 
-func newHub() *Hub {
-	return &Hub{
+func newHub() *hub {
+	return &hub{
 		update:     make(chan *message),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -35,7 +35,7 @@ func newHub() *Hub {
 	}
 }
 
-func (hub *Hub) run() {
+func (hub *hub) run() {
 	for {
 		select {
 		case client := <-hub.register:
@@ -55,7 +55,7 @@ func (hub *Hub) run() {
 	}
 }
 
-func (hub *Hub) manageClient(client *Client) {
+func (hub *hub) manageClient(client *Client) {
 	i := 0
 
 	for {

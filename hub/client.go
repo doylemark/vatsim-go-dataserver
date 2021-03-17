@@ -47,7 +47,7 @@ func HandleConnections() {
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
+	hub *hub
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -130,7 +130,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // handleSocket handles all websocket requests
-func handleSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func handleSocket(hub *hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
