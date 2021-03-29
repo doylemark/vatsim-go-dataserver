@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/doylemark/vatsim-go-dataserver/store"
 	"github.com/gorilla/websocket"
 )
 
@@ -30,9 +31,9 @@ var (
 )
 
 // HandleConnections handles all client websocket logic
-func HandleConnections() {
+func HandleConnections(st *store.Store) {
 	hub := newHub()
-	go hub.run()
+	go hub.run(st)
 
 	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		handleSocket(hub, rw, r)

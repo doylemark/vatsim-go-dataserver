@@ -1,9 +1,11 @@
 package hub
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/doylemark/vatsim-go-dataserver/store"
 )
 
 type message struct {
@@ -35,12 +37,12 @@ func newHub() *hub {
 	}
 }
 
-func (hub *hub) run() {
+func (hub *hub) run(st *store.Store) {
 	for {
 		select {
 		case client := <-hub.register:
 			hub.clients[client] = []string{}
-			go hub.manageClient(client)
+			go hub.manageClient(client, st)
 
 		case client := <-hub.unregister:
 			if _, ok := hub.clients[client]; ok {
@@ -50,21 +52,32 @@ func (hub *hub) run() {
 
 		case msg := <-hub.update:
 			hub.clients[msg.client] = msg.callsigns
-			fmt.Println(&msg.callsigns)
 		}
 	}
 }
 
-func (hub *hub) manageClient(client *Client) {
+func (hub *hub) manageClient(client *Client, st *store.Store) {
 	for {
 		if hub.clients[client] == nil {
 			fmt.Println("Client Disconnected")
 			break
 		}
 
-		msg := "Reporting Aircraft:" + strings.Join(hub.clients[client], " ") + "\nClients Connected:" + fmt.Sprint(len(hub.clients))
+		var output []store.Pilot
 
-		client.send <- []byte(msg)
-		time.Sleep(time.Millisecond * 500)
+		for _, callsign := range hub.clients[client] {
+			if _, ok := st.Pilots[callsign]; ok {
+				output = append(output, st.Pilots[callsign])
+			}
+		}
+
+		data, err := json.Marshal(output)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		client.send <- []byte(data)
+		time.Sleep(time.Second * 5)
 	}
 }
