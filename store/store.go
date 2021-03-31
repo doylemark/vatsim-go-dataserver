@@ -1,15 +1,5 @@
 package store
 
-type PositionUpdate struct {
-	Callsign    string
-	Transponder string
-	Latitude    float64
-	Longitude   float64
-	Altitude    float64
-	Heading     float64
-	Speed       float64
-}
-
 type Store struct {
 	AddPilot    chan *Pilot
 	UpdatePilot chan *PositionUpdate
@@ -35,25 +25,31 @@ func (store *Store) Run() {
 		case callsign := <-store.RemovePilot:
 			delete(store.Pilots, callsign)
 		case update := <-store.UpdatePilot:
-			current, ok := store.Pilots[update.Callsign]
-			if ok {
-				pilot := Pilot{
-					Cid:         current.Cid,
-					Server:      current.Server,
-					Type:        current.Type,
-					Rating:      current.Rating,
-					RealName:    current.RealName,
-					Callsign:    current.Callsign,
-					Latitude:    update.Latitude,
-					Longitude:   update.Longitude,
-					Transponder: update.Transponder,
-					Altitude:    update.Altitude,
-					Heading:     update.Heading,
-					Speed:       update.Speed,
-				}
-
-				store.Pilots[pilot.Callsign] = pilot
-			}
+			store.addPilot(update)
 		}
+	}
+}
+
+func (store *Store) addPilot(update *PositionUpdate) {
+
+	current, ok := store.Pilots[update.Callsign]
+
+	if ok {
+		pilot := Pilot{
+			Cid:         current.Cid,
+			Server:      current.Server,
+			Type:        current.Type,
+			Rating:      current.Rating,
+			RealName:    current.RealName,
+			Callsign:    current.Callsign,
+			Latitude:    update.Latitude,
+			Longitude:   update.Longitude,
+			Transponder: update.Transponder,
+			Altitude:    update.Altitude,
+			Heading:     update.Heading,
+			Speed:       update.Speed,
+		}
+
+		store.Pilots[pilot.Callsign] = pilot
 	}
 }

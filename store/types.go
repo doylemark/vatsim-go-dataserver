@@ -14,3 +14,13 @@ type Pilot struct {
 	Transponder string  `json:"transponder"`
 	Type        string  `json:"-"`
 }
+
+type PositionUpdate struct {
+	Callsign    string
+	Transponder string
+	Latitude    float64
+	Longitude   float64
+	Altitude    float64
+	Heading     float64
+	Speed       float64
+}
