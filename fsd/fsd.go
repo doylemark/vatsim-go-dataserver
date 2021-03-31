@@ -10,16 +10,13 @@ import (
 
 	"github.com/doylemark/vatsim-go-dataserver/log"
 	"github.com/doylemark/vatsim-go-dataserver/store"
-	"github.com/spf13/viper"
 )
 
 // ConnectToFSD establishes a connection to FSD over TCP socket
 func ConnectToFSD(st *store.Store, url string, clientName string, serverName string) {
 	log.FSDLogger.Print("Connecting to Socket")
 
-	ip := viper.GetString("fsd.url")
-
-	conn, err := net.Dial("tcp", ip)
+	conn, err := net.Dial("tcp", url)
 
 	if err != nil {
 		log.FSDLogger.Fatal("Error connecting to FSD\n", err)
