@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func initConfig() {
+func initConfig() (string, string, string) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
@@ -16,9 +16,10 @@ func initConfig() {
 	if err != nil {
 		log.Fatal("Couldn't read config file\n", err)
 	}
-}
 
-func initDefaults() {
-	viper.SetDefault("fsd.url", "")
-	viper.SetDefault("fsd.name", "")
+	url := viper.GetString("fsd.url")
+	clientName := viper.GetString("fsd.clientName")
+	serverName := viper.GetString("fsd.serverName")
+
+	return url, clientName, serverName
 }

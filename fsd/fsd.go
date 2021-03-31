@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/doylemark/vatsim-go-dataserver/log"
 	"github.com/doylemark/vatsim-go-dataserver/store"
@@ -13,53 +14,59 @@ import (
 )
 
 // ConnectToFSD establishes a connection to FSD over TCP socket
-func ConnectToFSD(st *store.Store) {
+func ConnectToFSD(st *store.Store, url string, clientName string, serverName string) {
 	log.FSDLogger.Print("Connecting to Socket")
 
 	ip := viper.GetString("fsd.url")
+
 	conn, err := net.Dial("tcp", ip)
 
 	if err != nil {
 		log.FSDLogger.Fatal("Error connecting to FSD\n", err)
 	}
 
+	defer conn.Close()
+
 	log.FSDLogger.Print("Connected to Socket")
 
-	defer func() {
-		conn.Close()
-		log.FSDLogger.Print("Closing Connection")
-	}()
-
-	name := viper.GetString("fsd.name")
-
-	_, err = conn.Write([]byte(`$"SYNC:*:` + name + `:B1:1:\r\n"`))
+	// Sync with other FSD servers
+	_, err = conn.Write([]byte(`"SYNC:*:` + serverName + `:B1:1:\r\n"`))
 
 	if err != nil {
 		log.FSDLogger.Fatal(err)
 	}
 
+	go handleConn(conn, serverName, clientName)
+
 	scanner := bufio.NewScanner(conn)
 
 	for scanner.Scan() {
-		if scanner.Text() == "#You are not allowed on this port." {
-			log.FSDLogger.Print("Connection Blocked on Port")
-			break
-		}
-
 		log.FSDLogger.Print(scanner.Text())
-		go handlePacket(scanner.Text(), st)
+		go handlePacket(scanner.Text(), st, conn)
 	}
 
-	fmt.Println(scanner.Err())
+	if scanner.Err() != nil {
+		log.FSDLogger.Print(scanner.Err())
+	}
 }
 
-const (
-	TYPE_INDEX = 8
-)
+func handleConn(c net.Conn, serverName string, clientName string) {
+	transferCount := 0
 
-func handlePacket(packet string, st *store.Store) {
+	for {
+		// must perform at least every 30s to prevent disconnection from server (can be any valid write)
+		time.Sleep(time.Second * 30)
+		transferCount += 1
+
+		// request all atc data
+		msg := "AD:*:" + serverName + ":B" + fmt.Sprint(transferCount) + ":1:" + clientName + ":99999:1:100:12:0.00000:0.00000:0\r\n"
+
+		c.Write([]byte(msg))
+	}
+}
+
+func handlePacket(packet string, st *store.Store, c net.Conn) {
 	fields := strings.Split(packet, ":")
-	log.FSDLogger.Println(fields)
 
 	switch fields[0] {
 	case "ADDCLIENT":
@@ -76,22 +83,27 @@ func addClient(fields []string, st *store.Store) {
 		return
 	}
 
-	if fields[TYPE_INDEX] == "1" {
+	const (
+		TYPE = 8
+	)
+
+	if fields[TYPE] == "1" {
+
 		const (
-			CID_INDEX      = 5
-			SERVER_INDEX   = 6
-			CALLSIGN_INDEX = 7
-			RATING_INDEX   = 9
-			NAME_INDEX     = 11
+			CID      = 5
+			SERVER   = 6
+			CALLSIGN = 7
+			RATING   = 9
+			NAME     = 11
 		)
 
 		pilot := &store.Pilot{
-			Cid:      fields[CID_INDEX],
-			Server:   fields[SERVER_INDEX],
-			Type:     fields[TYPE_INDEX],
-			Rating:   fields[RATING_INDEX],
-			RealName: fields[NAME_INDEX],
-			Callsign: fields[CALLSIGN_INDEX],
+			Cid:      fields[CID],
+			Server:   fields[SERVER],
+			Type:     fields[TYPE],
+			Rating:   fields[RATING],
+			RealName: fields[NAME],
+			Callsign: fields[CALLSIGN],
 		}
 
 		st.AddPilot <- pilot
@@ -104,23 +116,23 @@ func updatePilot(fields []string, st *store.Store) {
 	}
 
 	const (
-		CALLSIGN_INDEX    = 6
-		TRANSPONDER_INDEX = 7
-		LATITUDE_INDEX    = 9
-		LONGITUDE_INDEX   = 10
-		ALTITUDE_INDEX    = 11
-		SPEED_INDEX       = 12
+		CALLSIGN    = 6
+		TRANSPONDER = 7
+		LATITUDE    = 9
+		LONGITUDE   = 10
+		ALTITUDE    = 11
+		SPEED       = 12
 	)
 
-	fs, errs := parseFloats([]string{fields[LATITUDE_INDEX], fields[LONGITUDE_INDEX], fields[ALTITUDE_INDEX], fields[SPEED_INDEX]})
+	fs, errs := parseFloats([]string{fields[LATITUDE], fields[LONGITUDE], fields[ALTITUDE], fields[SPEED]})
 
 	if len(errs) != 0 {
 		return
 	}
 
 	update := &store.PositionUpdate{
-		Callsign:    fields[CALLSIGN_INDEX],
-		Transponder: fields[TRANSPONDER_INDEX],
+		Callsign:    fields[CALLSIGN],
+		Transponder: fields[TRANSPONDER],
 		Latitude:    fs[0],
 		Longitude:   fs[1],
 		Altitude:    fs[2],

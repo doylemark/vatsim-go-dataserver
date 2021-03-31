@@ -9,11 +9,11 @@ import (
 
 func main() {
 	log.InitLog()
-	initConfig()
+	url, clientName, serverName := initConfig()
 
 	store := store.NewStore()
 	go store.Run()
 
-	go fsd.ConnectToFSD(store)
+	go fsd.ConnectToFSD(store, url, clientName, serverName)
 	hub.HandleConnections(store)
 }
